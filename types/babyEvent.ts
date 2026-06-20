@@ -1,0 +1,36 @@
+export type EventType = "wet_diaper" | "dirty_diaper" | "feed";
+export type FeedSide = "left" | "right";
+
+export interface BabyEvent {
+  id: string;
+  user_id: string | null;
+  baby_id: string | null;
+  event_type: EventType;
+  occurred_at: string;
+  feed_side: FeedSide | null;
+  feed_start_time: string | null;
+  feed_end_time: string | null;
+  duration_minutes: number | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateDiaperEventInput {
+  event_type: "wet_diaper" | "dirty_diaper";
+  occurred_at: string;
+}
+
+export interface CreateFeedEventInput {
+  feed_side: FeedSide;
+  feed_start_time: string;
+  feed_end_time?: string | null;
+}
+
+export interface UpdateBabyEventInput {
+  occurred_at?: string;
+  feed_side?: FeedSide;
+  feed_start_time?: string;
+  feed_end_time?: string | null;
+  duration_minutes?: number | null;
+}
