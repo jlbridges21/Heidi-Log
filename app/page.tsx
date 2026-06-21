@@ -8,15 +8,35 @@ import EventModal from "@/components/EventModal";
 import FeedModal from "@/components/FeedModal";
 import SetupBanner from "@/components/SetupBanner";
 import Toast from "@/components/Toast";
-import { fetchActiveFeed } from "@/lib/babyEvents";
+import { fetchActiveFeed, fetchLastFeed } from "@/lib/babyEvents";
 import { isSupabaseConfigured } from "@/lib/supabaseClient";
 import type { BabyEvent } from "@/types/babyEvent";
 
 type ModalType = "wet" | "dirty" | "feed" | null;
 
+function getTimeSinceFeed(feedTime?: string | null, currentTime = new Date()) {
+  if (!feedTime) return "No feedings logged yet";
+
+  const diffMs = currentTime.getTime() - new Date(feedTime).getTime();
+
+  if (diffMs < 0) return "Last feeding time looks incorrect";
+
+  const totalMinutes = Math.floor(diffMs / 1000 / 60);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  if (totalMinutes < 1) return "Last fed just now";
+  if (hours === 0) return `Last fed ${minutes} min ago`;
+  if (minutes === 0) return `Last fed ${hours} hr ago`;
+
+  return `Last fed ${hours} hr ${minutes} min ago`;
+}
+
 export default function DashboardPage() {
   const router = useRouter();
   const [activeFeed, setActiveFeed] = useState<BabyEvent | null>(null);
+  const [lastFeed, setLastFeed] = useState<BabyEvent | null>(null);
+  const [now, setNow] = useState(new Date());
   const [loading, setLoading] = useState(true);
   const [openModal, setOpenModal] = useState<ModalType>(null);
   const [toast, setToast] = useState<{
@@ -32,18 +52,23 @@ export default function DashboardPage() {
     []
   );
 
-  const loadActiveFeed = useCallback(async () => {
+  const loadFeedData = useCallback(async () => {
     if (!isSupabaseConfigured) {
       setLoading(false);
       return;
     }
 
     try {
-      const feed = await fetchActiveFeed();
-      setActiveFeed(feed);
+      const [active, last] = await Promise.all([
+        fetchActiveFeed(),
+        fetchLastFeed(),
+      ]);
+
+      setActiveFeed(active);
+      setLastFeed(last);
     } catch (err) {
       showToast(
-        err instanceof Error ? err.message : "Failed to load active feed",
+        err instanceof Error ? err.message : "Failed to load feed data",
         "error"
       );
     } finally {
@@ -52,13 +77,21 @@ export default function DashboardPage() {
   }, [showToast]);
 
   useEffect(() => {
-    loadActiveFeed();
-  }, [loadActiveFeed]);
+    loadFeedData();
+  }, [loadFeedData]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setNow(new Date());
+    }, 60000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   const handleSaved = () => {
     setOpenModal(null);
     showToast("Saved!", "success");
-    loadActiveFeed();
+    loadFeedData();
   };
 
   if (!isSupabaseConfigured) {
@@ -66,7 +99,9 @@ export default function DashboardPage() {
       <main className="mx-auto min-h-screen max-w-lg px-4 py-8">
         <header className="mb-8 text-center">
           <h1 className="text-3xl font-bold text-slate-800">Baby Log</h1>
-          <p className="mt-2 text-slate-600">Simple tracking for tired parents</p>
+          <p className="mt-2 text-slate-600">
+            Simple tracking for tired parents
+          </p>
         </header>
         <SetupBanner message="Copy .env.example to .env.local and add your Supabase URL and anon key. See README for full setup steps." />
       </main>
@@ -77,7 +112,11 @@ export default function DashboardPage() {
     <main className="mx-auto min-h-screen max-w-lg px-4 py-8 pb-12">
       <header className="mb-8 text-center">
         <h1 className="text-3xl font-bold text-slate-800">Baby Log</h1>
-        <p className="mt-2 text-slate-600">Tap to log — quick & easy at 3am</p>
+        <p className="mt-2 text-slate-600">
+          {activeFeed
+            ? "Feeding in progress"
+            : getTimeSinceFeed(lastFeed?.feed_start_time ?? lastFeed?.occurred_at, now)}
+        </p>
       </header>
 
       {loading ? (
@@ -91,7 +130,7 @@ export default function DashboardPage() {
               activeFeed={activeFeed}
               onEnded={() => {
                 showToast("Feeding saved!", "success");
-                loadActiveFeed();
+                loadFeedData();
               }}
               onError={(msg) => showToast(msg, "error")}
             />
