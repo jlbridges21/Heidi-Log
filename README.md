@@ -13,7 +13,8 @@ A mobile-first web app for tracking wet diapers, dirty diapers, and breastfeedin
 
 - **Wet / Dirty Diaper** — log now or enter an earlier time
 - **Feed** — start a live timer or enter a completed session manually
-- **Active feeding** — one session at a time with on-screen timer and End Feeding
+- **Active feeding** — one session at a time with on-screen timer, pause/resume for burp breaks, and End Feeding
+- **Last fed** — shows time since the last feeding ended
 - **Baby Log** — view, edit, and delete all entries (newest first)
 
 ---
@@ -38,6 +39,8 @@ npm install
 3. Copy the contents of `supabase/schema.sql` and paste into the editor
 4. Click **Run**
 5. Confirm success — you should see the `baby_events` table under **Table Editor**
+
+If you already ran an earlier version of the schema, also run `supabase/migrations/001_add_feed_pause.sql` to add pause support.
 
 ## Add Environment Variables
 
@@ -121,7 +124,9 @@ supabase/
 | feed_side         | text        | `left` or `right` (feeds only)             |
 | feed_start_time   | timestamptz | Feed start                                 |
 | feed_end_time     | timestamptz | Feed end (null while active)               |
-| duration_minutes  | integer     | Calculated from start/end                  |
+| feed_paused_at    | timestamptz | When currently paused (null while running)   |
+| feed_paused_seconds | integer   | Accumulated pause time in seconds            |
+| duration_minutes  | integer     | Active feeding time (excludes pauses)      |
 | notes             | text        | Optional                                   |
 | created_at        | timestamptz | Auto                                       |
 | updated_at        | timestamptz | Auto                                       |

@@ -115,7 +115,7 @@ export default function DashboardPage() {
         <p className="mt-2 text-slate-600">
           {activeFeed
             ? "Feeding in progress"
-            : getTimeSinceFeed(lastFeed?.feed_start_time ?? lastFeed?.occurred_at, now)}
+            : getTimeSinceFeed(lastFeed?.feed_end_time, now)}
         </p>
       </header>
 
@@ -132,6 +132,7 @@ export default function DashboardPage() {
                 showToast("Feeding saved!", "success");
                 loadFeedData();
               }}
+              onUpdated={(feed) => setActiveFeed(feed)}
               onError={(msg) => showToast(msg, "error")}
             />
           </div>

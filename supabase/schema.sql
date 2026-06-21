@@ -14,6 +14,8 @@ create table if not exists public.baby_events (
   feed_side text null check (feed_side is null or feed_side in ('left', 'right')),
   feed_start_time timestamptz null,
   feed_end_time timestamptz null,
+  feed_paused_at timestamptz null,
+  feed_paused_seconds integer not null default 0,
   duration_minutes integer null,
   notes text null,
   created_at timestamptz not null default now(),

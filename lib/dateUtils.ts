@@ -90,6 +90,58 @@ export function calculateDurationMinutes(
   return Math.round((end.getTime() - start.getTime()) / 60000);
 }
 
+export function calculateFeedDurationMinutes(
+  startISO: string,
+  endISO: string,
+  pausedSeconds = 0
+): number {
+  const start = new Date(startISO);
+  const end = new Date(endISO);
+
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+    throw new Error("Invalid start or end time");
+  }
+
+  if (end < start) {
+    throw new Error("End time cannot be before start time");
+  }
+
+  const activeMs = end.getTime() - start.getTime() - pausedSeconds * 1000;
+  return Math.round(Math.max(0, activeMs) / 60000);
+}
+
+function formatSecondsAsElapsed(totalSeconds: number): string {
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  const pad = (n: number) => String(n).padStart(2, "0");
+
+  if (hours > 0) {
+    return `${hours}:${pad(minutes)}:${pad(seconds)}`;
+  }
+
+  return `${minutes}:${pad(seconds)}`;
+}
+
+export function getFeedActiveSeconds(
+  startISO: string,
+  pausedAtISO: string | null,
+  pausedSeconds: number,
+  now = new Date()
+): number {
+  const start = new Date(startISO);
+  if (Number.isNaN(start.getTime())) {
+    return 0;
+  }
+
+  let totalPausedMs = pausedSeconds * 1000;
+  if (pausedAtISO) {
+    totalPausedMs += now.getTime() - new Date(pausedAtISO).getTime();
+  }
+
+  return Math.max(0, Math.floor((now.getTime() - start.getTime() - totalPausedMs) / 1000));
+}
+
 export function formatElapsed(startISO: string): string {
   const start = new Date(startISO);
   const now = new Date();
@@ -102,17 +154,18 @@ export function formatElapsed(startISO: string): string {
     0,
     Math.floor((now.getTime() - start.getTime()) / 1000)
   );
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = totalSeconds % 60;
 
-  const pad = (n: number) => String(n).padStart(2, "0");
+  return formatSecondsAsElapsed(totalSeconds);
+}
 
-  if (hours > 0) {
-    return `${hours}:${pad(minutes)}:${pad(seconds)}`;
-  }
-
-  return `${minutes}:${pad(seconds)}`;
+export function formatFeedElapsed(
+  startISO: string,
+  pausedAtISO: string | null,
+  pausedSeconds: number
+): string {
+  return formatSecondsAsElapsed(
+    getFeedActiveSeconds(startISO, pausedAtISO, pausedSeconds)
+  );
 }
 
 export function getEventTypeLabel(eventType: string): string {

@@ -4,7 +4,10 @@ import type {
   CreateFeedEventInput,
   UpdateBabyEventInput,
 } from "@/types/babyEvent";
-import { calculateDurationMinutes } from "@/lib/dateUtils";
+import {
+  calculateDurationMinutes,
+  calculateFeedDurationMinutes,
+} from "@/lib/dateUtils";
 import { getSupabaseClient } from "@/lib/supabaseClient";
 
 export async function fetchAllEvents(): Promise<BabyEvent[]> {
@@ -49,7 +52,7 @@ export async function fetchLastFeed(): Promise<BabyEvent | null> {
     .select("*")
     .eq("event_type", "feed")
     .not("feed_end_time", "is", null)
-    .order("feed_start_time", { ascending: false })
+    .order("feed_end_time", { ascending: false })
     .limit(1)
     .maybeSingle();
 
@@ -102,6 +105,8 @@ export async function startFeed(input: {
       feed_side: input.feed_side,
       feed_start_time: input.feed_start_time,
       feed_end_time: null,
+      feed_paused_at: null,
+      feed_paused_seconds: 0,
       duration_minutes: null,
       updated_at: new Date().toISOString(),
     })
@@ -137,13 +142,105 @@ export async function endFeed(
     throw new Error("Feed is missing a start time");
   }
 
-  const duration = calculateDurationMinutes(feed.feed_start_time, endTime);
+  let pausedSeconds = feed.feed_paused_seconds ?? 0;
+  if (feed.feed_paused_at) {
+    pausedSeconds += Math.floor(
+      (new Date(endTime).getTime() - new Date(feed.feed_paused_at).getTime()) /
+        1000
+    );
+  }
+
+  const duration = calculateFeedDurationMinutes(
+    feed.feed_start_time,
+    endTime,
+    pausedSeconds
+  );
 
   const { data, error } = await supabase
     .from("baby_events")
     .update({
       feed_end_time: endTime,
+      feed_paused_at: null,
+      feed_paused_seconds: pausedSeconds,
       duration_minutes: duration,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", feedId)
+    .select("*")
+    .single();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data as BabyEvent;
+}
+
+export async function pauseFeed(feedId: string): Promise<BabyEvent> {
+  const supabase = getSupabaseClient();
+
+  const { data: existing, error: fetchError } = await supabase
+    .from("baby_events")
+    .select("*")
+    .eq("id", feedId)
+    .single();
+
+  if (fetchError) {
+    throw new Error(fetchError.message);
+  }
+
+  const feed = existing as BabyEvent;
+
+  if (feed.feed_paused_at) {
+    throw new Error("Feeding is already paused");
+  }
+
+  const { data, error } = await supabase
+    .from("baby_events")
+    .update({
+      feed_paused_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", feedId)
+    .select("*")
+    .single();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data as BabyEvent;
+}
+
+export async function resumeFeed(feedId: string): Promise<BabyEvent> {
+  const supabase = getSupabaseClient();
+
+  const { data: existing, error: fetchError } = await supabase
+    .from("baby_events")
+    .select("*")
+    .eq("id", feedId)
+    .single();
+
+  if (fetchError) {
+    throw new Error(fetchError.message);
+  }
+
+  const feed = existing as BabyEvent;
+
+  if (!feed.feed_paused_at) {
+    throw new Error("Feeding is not paused");
+  }
+
+  const pauseDurationSeconds = Math.floor(
+    (Date.now() - new Date(feed.feed_paused_at).getTime()) / 1000
+  );
+
+  const { data, error } = await supabase
+    .from("baby_events")
+    .update({
+      feed_paused_at: null,
+      feed_paused_seconds:
+        (feed.feed_paused_seconds ?? 0) + pauseDurationSeconds,
       updated_at: new Date().toISOString(),
     })
     .eq("id", feedId)

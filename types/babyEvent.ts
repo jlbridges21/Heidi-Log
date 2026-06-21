@@ -10,6 +10,8 @@ export interface BabyEvent {
   feed_side: FeedSide | null;
   feed_start_time: string | null;
   feed_end_time: string | null;
+  feed_paused_at: string | null;
+  feed_paused_seconds: number;
   duration_minutes: number | null;
   notes: string | null;
   created_at: string;
