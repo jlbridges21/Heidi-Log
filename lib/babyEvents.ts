@@ -1,4 +1,9 @@
-import type { BabyEvent, CreateDiaperEventInput, CreateFeedEventInput, UpdateBabyEventInput } from "@/types/babyEvent";
+import type {
+  BabyEvent,
+  CreateDiaperEventInput,
+  CreateFeedEventInput,
+  UpdateBabyEventInput,
+} from "@/types/babyEvent";
 import { calculateDurationMinutes } from "@/lib/dateUtils";
 import { getSupabaseClient } from "@/lib/supabaseClient";
 
@@ -25,6 +30,25 @@ export async function fetchActiveFeed(): Promise<BabyEvent | null> {
     .select("*")
     .eq("event_type", "feed")
     .is("feed_end_time", null)
+    .order("feed_start_time", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data as BabyEvent | null;
+}
+
+export async function fetchLastFeed(): Promise<BabyEvent | null> {
+  const supabase = getSupabaseClient();
+
+  const { data, error } = await supabase
+    .from("baby_events")
+    .select("*")
+    .eq("event_type", "feed")
+    .not("feed_end_time", "is", null)
     .order("feed_start_time", { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -63,6 +87,7 @@ export async function startFeed(input: {
   feed_start_time: string;
 }): Promise<BabyEvent> {
   const active = await fetchActiveFeed();
+
   if (active) {
     throw new Error("A feeding session is already in progress");
   }
@@ -136,6 +161,7 @@ export async function createCompletedFeed(
   input: CreateFeedEventInput & { feed_end_time: string }
 ): Promise<BabyEvent> {
   const active = await fetchActiveFeed();
+
   if (active) {
     throw new Error("A feeding session is already in progress");
   }
@@ -185,6 +211,7 @@ export async function updateEvent(
   }
 
   const event = existing as BabyEvent;
+
   const updates: UpdateBabyEventInput & { updated_at: string } = {
     ...input,
     updated_at: new Date().toISOString(),
@@ -193,6 +220,7 @@ export async function updateEvent(
   if (event.event_type === "feed") {
     const start =
       input.feed_start_time ?? event.feed_start_time ?? event.occurred_at;
+
     const end =
       input.feed_end_time !== undefined
         ? input.feed_end_time
@@ -203,7 +231,7 @@ export async function updateEvent(
       updates.feed_start_time = start;
     }
 
-    if (end) {
+    if (end && start) {
       updates.duration_minutes = calculateDurationMinutes(start, end);
     } else {
       updates.duration_minutes = null;
