@@ -9,28 +9,11 @@ import FeedModal from "@/components/FeedModal";
 import SetupBanner from "@/components/SetupBanner";
 import Toast from "@/components/Toast";
 import { fetchActiveFeed, fetchLastFeed } from "@/lib/babyEvents";
+import { formatLastFedSummary } from "@/lib/dateUtils";
 import { isSupabaseConfigured } from "@/lib/supabaseClient";
 import type { BabyEvent } from "@/types/babyEvent";
 
 type ModalType = "wet" | "dirty" | "feed" | null;
-
-function getTimeSinceFeed(feedTime?: string | null, currentTime = new Date()) {
-  if (!feedTime) return "No feedings logged yet";
-
-  const diffMs = currentTime.getTime() - new Date(feedTime).getTime();
-
-  if (diffMs < 0) return "Last feeding time looks incorrect";
-
-  const totalMinutes = Math.floor(diffMs / 1000 / 60);
-  const hours = Math.floor(totalMinutes / 60);
-  const minutes = totalMinutes % 60;
-
-  if (totalMinutes < 1) return "Last fed just now";
-  if (hours === 0) return `Last fed ${minutes} min ago`;
-  if (minutes === 0) return `Last fed ${hours} hr ago`;
-
-  return `Last fed ${hours} hr ${minutes} min ago`;
-}
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -112,10 +95,10 @@ export default function DashboardPage() {
     <main className="mx-auto min-h-screen max-w-lg px-4 py-8 pb-12">
       <header className="mb-8 text-center">
         <h1 className="text-3xl font-bold text-slate-800">Baby Log</h1>
-        <p className="mt-2 text-slate-600">
+        <p className="mt-2 px-2 text-sm leading-relaxed text-slate-600 sm:text-base">
           {activeFeed
             ? "Feeding in progress"
-            : getTimeSinceFeed(lastFeed?.feed_end_time, now)}
+            : formatLastFedSummary(lastFeed, now)}
         </p>
       </header>
 

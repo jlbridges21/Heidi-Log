@@ -3,6 +3,8 @@
  * All storage is UTC via Supabase; display uses the user's local timezone.
  */
 
+import type { BabyEvent } from "@/types/babyEvent";
+
 export function nowISO(): string {
   return new Date().toISOString();
 }
@@ -190,6 +192,77 @@ export function getFeedSideLabel(side: string | null): string {
     default:
       return "—";
   }
+}
+
+function formatTimeAgo(diffMs: number): string {
+  const totalMinutes = Math.floor(diffMs / 60000);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  if (totalMinutes < 1) return "just now";
+  if (hours === 0) return `${minutes} min ago`;
+  if (minutes === 0) return `${hours} hr ago`;
+  return `${hours} hr ${minutes} min ago`;
+}
+
+function formatFeedDurationSummary(durationMinutes: number): string {
+  if (durationMinutes === 1) return "1 minute";
+  if (durationMinutes < 60) return `${durationMinutes} minutes`;
+
+  const hrs = Math.floor(durationMinutes / 60);
+  const mins = durationMinutes % 60;
+
+  if (mins === 0) {
+    return hrs === 1 ? "1 hour" : `${hrs} hours`;
+  }
+
+  return `${hrs} hr ${mins} min`;
+}
+
+function getLastFeedDurationMinutes(feed: BabyEvent): number | null {
+  if (feed.duration_minutes !== null && feed.duration_minutes >= 0) {
+    return feed.duration_minutes;
+  }
+
+  if (feed.feed_start_time && feed.feed_end_time) {
+    return calculateFeedDurationMinutes(
+      feed.feed_start_time,
+      feed.feed_end_time,
+      feed.feed_paused_seconds ?? 0
+    );
+  }
+
+  return null;
+}
+
+export function formatLastFedSummary(
+  feed: BabyEvent | null,
+  currentTime = new Date()
+): string {
+  if (!feed?.feed_end_time) {
+    return "No feedings logged yet";
+  }
+
+  const endTime = new Date(feed.feed_end_time);
+  if (Number.isNaN(endTime.getTime())) {
+    return "No feedings logged yet";
+  }
+
+  const diffMs = currentTime.getTime() - endTime.getTime();
+  if (diffMs < 0) {
+    return "Last feeding time looks incorrect";
+  }
+
+  const agoPart = formatTimeAgo(diffMs);
+  const durationMinutes = getLastFeedDurationMinutes(feed);
+  const side = getFeedSideLabel(feed.feed_side);
+
+  if (durationMinutes === null) {
+    return `Last fed ${agoPart} on the ${side} boob`;
+  }
+
+  const durationPart = formatFeedDurationSummary(durationMinutes);
+  return `Last fed ${agoPart} for ${durationPart} on the ${side} boob`;
 }
 
 export function validateManualDateTime(localDateTime: string): string | null {
