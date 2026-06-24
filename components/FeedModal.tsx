@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import type { FeedSide } from "@/types/babyEvent";
-import { FEED_SIDES } from "@/types/babyEvent";
+import type { BottleType, FeedSide } from "@/types/babyEvent";
+import { BOTTLE_TYPES, FEED_SIDES } from "@/types/babyEvent";
 import { createCompletedFeed, startFeed } from "@/lib/babyEvents";
 import {
+  getBottleTypeButtonLabel,
   getFeedMethodSelectedLabel,
   getFeedSideButtonLabel,
   nowISO,
@@ -21,7 +22,7 @@ interface FeedModalProps {
   hasActiveFeed: boolean;
 }
 
-type Step = "side" | "timing" | "manual";
+type Step = "side" | "bottle_type" | "timing" | "manual";
 
 export default function FeedModal({
   isOpen,
@@ -32,6 +33,7 @@ export default function FeedModal({
 }: FeedModalProps) {
   const [step, setStep] = useState<Step>("side");
   const [side, setSide] = useState<FeedSide | null>(null);
+  const [bottleType, setBottleType] = useState<BottleType | null>(null);
   const [startLocal, setStartLocal] = useState(toLocalInputValue(nowISO()));
   const [endLocal, setEndLocal] = useState(toLocalInputValue(nowISO()));
   const [loading, setLoading] = useState(false);
@@ -44,6 +46,7 @@ export default function FeedModal({
   const reset = () => {
     setStep("side");
     setSide(null);
+    setBottleType(null);
     setStartLocal(toLocalInputValue(nowISO()));
     setEndLocal(toLocalInputValue(nowISO()));
     setValidationError(null);
@@ -57,11 +60,31 @@ export default function FeedModal({
 
   const handleSelectSide = (selected: FeedSide) => {
     setSide(selected);
+    setBottleType(null);
+    setStep(selected === "bottle" ? "bottle_type" : "timing");
+  };
+
+  const handleSelectBottleType = (selected: BottleType) => {
+    setBottleType(selected);
     setStep("timing");
   };
 
+  const feedPayload = () => {
+    if (!side) return null;
+    return {
+      feed_side: side,
+      bottle_type: side === "bottle" ? bottleType : null,
+    };
+  };
+
   const handleStartNow = async () => {
-    if (!side) return;
+    const payload = feedPayload();
+    if (!payload) return;
+
+    if (payload.feed_side === "bottle" && !payload.bottle_type) {
+      onError("Please select Breast Milk or Formula");
+      return;
+    }
 
     if (hasActiveFeed) {
       onError("A feeding session is already in progress");
@@ -71,7 +94,7 @@ export default function FeedModal({
     setLoading(true);
     try {
       await startFeed({
-        feed_side: side,
+        ...payload,
         feed_start_time: nowISO(),
       });
       reset();
@@ -85,7 +108,13 @@ export default function FeedModal({
 
   const handleManualSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!side) return;
+    const payload = feedPayload();
+    if (!payload) return;
+
+    if (payload.feed_side === "bottle" && !payload.bottle_type) {
+      setValidationError("Please select Breast Milk or Formula");
+      return;
+    }
 
     const error = validateFeedTimes(startLocal, endLocal);
     if (error) {
@@ -98,7 +127,7 @@ export default function FeedModal({
 
     try {
       await createCompletedFeed({
-        feed_side: side,
+        ...payload,
         feed_start_time: toISOFromLocalInput(startLocal),
         feed_end_time: toISOFromLocalInput(endLocal),
       });
@@ -149,10 +178,33 @@ export default function FeedModal({
           </div>
         )}
 
+        {step === "bottle_type" && (
+          <div className="flex flex-col gap-3">
+            <p className="text-sm text-slate-600">What&apos;s in the bottle?</p>
+            {BOTTLE_TYPES.map((type) => (
+              <button
+                key={type}
+                type="button"
+                onClick={() => handleSelectBottleType(type)}
+                className="rounded-xl bg-sky-100 px-4 py-4 text-base font-semibold text-sky-900 active:bg-sky-200"
+              >
+                {getBottleTypeButtonLabel(type)}
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={() => setStep("side")}
+              className="text-sm font-medium text-slate-500"
+            >
+              ← Change method
+            </button>
+          </div>
+        )}
+
         {step === "timing" && (
           <div className="flex flex-col gap-3">
             <p className="text-sm text-slate-600">
-              {getFeedMethodSelectedLabel(side)}
+              {getFeedMethodSelectedLabel(side, bottleType)}
             </p>
             <button
               type="button"
@@ -172,10 +224,12 @@ export default function FeedModal({
             </button>
             <button
               type="button"
-              onClick={() => setStep("side")}
+              onClick={() =>
+                setStep(side === "bottle" ? "bottle_type" : "side")
+              }
               className="text-sm font-medium text-slate-500"
             >
-              ← Change method
+              ← Back
             </button>
           </div>
         )}
@@ -183,7 +237,10 @@ export default function FeedModal({
         {step === "manual" && (
           <form onSubmit={handleManualSubmit} className="flex flex-col gap-4">
             <p className="text-sm text-slate-600">
-              {getFeedMethodSelectedLabel(side).replace(" selected", "")}
+              {getFeedMethodSelectedLabel(side, bottleType).replace(
+                " selected",
+                ""
+              )}
             </p>
             <div>
               <label

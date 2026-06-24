@@ -5,6 +5,7 @@ import {
   formatDateTime,
   formatDuration,
   formatTime,
+  getBottleTypeLabel,
   getEventTypeLabel,
   getFeedSideLabel,
 } from "@/lib/dateUtils";
@@ -53,6 +54,12 @@ export default function LogItem({ event, onEdit, onDelete }: LogItemProps) {
             <span className="font-medium text-slate-700">Method:</span>{" "}
             {getFeedSideLabel(event.feed_side)}
           </p>
+          {event.feed_side === "bottle" && event.bottle_type && (
+            <p>
+              <span className="font-medium text-slate-700">Contents:</span>{" "}
+              {getBottleTypeLabel(event.bottle_type)}
+            </p>
+          )}
           {event.feed_start_time && (
             <p>
               <span className="font-medium text-slate-700">Start:</span>{" "}

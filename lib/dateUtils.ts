@@ -209,40 +209,70 @@ export function getFeedSideButtonLabel(side: string): string {
   }
 }
 
-export function getFeedMethodSelectedLabel(side: string | null): string {
+export function getBottleTypeLabel(type: string | null): string {
+  switch (type) {
+    case "breast_milk":
+      return "Breast Milk";
+    case "formula":
+      return "Formula";
+    default:
+      return "—";
+  }
+}
+
+export function getBottleTypeButtonLabel(type: string): string {
+  return getBottleTypeLabel(type);
+}
+
+export function getFeedMethodSelectedLabel(
+  side: string | null,
+  bottleType: string | null = null
+): string {
   switch (side) {
     case "left":
       return "Left side selected";
     case "right":
       return "Right side selected";
     case "bottle":
-      return "Bottle selected";
+      return bottleType
+        ? `${getBottleTypeLabel(bottleType)} bottle selected`
+        : "Bottle selected";
     default:
       return "Feed method selected";
   }
 }
 
-export function getActiveFeedMethodLabel(side: string | null): string {
+export function getActiveFeedMethodLabel(
+  side: string | null,
+  bottleType: string | null = null
+): string {
   switch (side) {
     case "left":
       return "Left side";
     case "right":
       return "Right side";
     case "bottle":
-      return "Bottle";
+      return bottleType
+        ? `Bottle · ${getBottleTypeLabel(bottleType)}`
+        : "Bottle";
     default:
       return "—";
   }
 }
 
-function getLastFeedMethodPhrase(side: string | null): string {
+function getLastFeedMethodPhrase(
+  side: string | null,
+  bottleType: string | null = null
+): string {
   switch (side) {
     case "left":
       return "on the Left boob";
     case "right":
       return "on the Right boob";
     case "bottle":
-      return "with a bottle";
+      return bottleType
+        ? `with a ${getBottleTypeLabel(bottleType)} bottle`
+        : "with a bottle";
     default:
       return "";
   }
@@ -309,7 +339,10 @@ export function formatLastFedSummary(
 
   const agoPart = formatTimeAgo(diffMs);
   const durationMinutes = getLastFeedDurationMinutes(feed);
-  const methodPhrase = getLastFeedMethodPhrase(feed.feed_side);
+  const methodPhrase = getLastFeedMethodPhrase(
+    feed.feed_side,
+    feed.bottle_type
+  );
 
   if (!methodPhrase) {
     return durationMinutes === null

@@ -43,6 +43,7 @@ npm install
 If you already ran an earlier version of the schema, also run:
 - `supabase/migrations/001_add_feed_pause.sql` — pause support
 - `supabase/migrations/002_add_bottle_feed.sql` — bottle feeding option
+- `supabase/migrations/003_add_bottle_type.sql` — breast milk or formula for bottles
 
 ## Add Environment Variables
 
@@ -124,6 +125,7 @@ supabase/
 | event_type        | text        | `wet_diaper`, `dirty_diaper`, `feed`       |
 | occurred_at       | timestamptz | Diaper time, or feed start for feeds       |
 | feed_side         | text        | `left`, `right`, or `bottle` (feeds only)  |
+| bottle_type       | text        | `breast_milk` or `formula` (bottle only)   |
 | feed_start_time   | timestamptz | Feed start                                 |
 | feed_end_time     | timestamptz | Feed end (null while active)               |
 | feed_paused_at    | timestamptz | When currently paused (null while running)   |

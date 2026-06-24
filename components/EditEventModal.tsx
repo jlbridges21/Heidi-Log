@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { BabyEvent, FeedSide } from "@/types/babyEvent";
-import { FEED_SIDES } from "@/types/babyEvent";
+import type { BabyEvent, BottleType, FeedSide } from "@/types/babyEvent";
+import { BOTTLE_TYPES, FEED_SIDES } from "@/types/babyEvent";
 import { updateEvent } from "@/lib/babyEvents";
 import {
+  getBottleTypeButtonLabel,
   getFeedSideButtonLabel,
   toISOFromLocalInput,
   toLocalInputValue,
@@ -29,6 +30,7 @@ export default function EditEventModal({
 }: EditEventModalProps) {
   const [occurredLocal, setOccurredLocal] = useState("");
   const [feedSide, setFeedSide] = useState<FeedSide>("left");
+  const [bottleType, setBottleType] = useState<BottleType | null>(null);
   const [startLocal, setStartLocal] = useState("");
   const [endLocal, setEndLocal] = useState("");
   const [loading, setLoading] = useState(false);
@@ -39,6 +41,7 @@ export default function EditEventModal({
 
     setOccurredLocal(toLocalInputValue(event.occurred_at));
     setFeedSide(event.feed_side ?? "left");
+    setBottleType(event.bottle_type);
     setStartLocal(
       toLocalInputValue(event.feed_start_time ?? event.occurred_at)
     );
@@ -66,6 +69,18 @@ export default function EditEventModal({
           return;
         }
 
+        if (feedSide === "bottle" && !bottleType) {
+          setValidationError("Please select Breast Milk or Formula");
+          setLoading(false);
+          return;
+        }
+
+        const feedUpdate = {
+          feed_side: feedSide,
+          bottle_type: feedSide === "bottle" ? bottleType : null,
+          feed_start_time: toISOFromLocalInput(startLocal),
+        };
+
         if (endLocal) {
           const error = validateFeedTimes(startLocal, endLocal);
           if (error) {
@@ -75,14 +90,12 @@ export default function EditEventModal({
           }
 
           await updateEvent(event.id, {
-            feed_side: feedSide,
-            feed_start_time: toISOFromLocalInput(startLocal),
+            ...feedUpdate,
             feed_end_time: toISOFromLocalInput(endLocal),
           });
         } else if (isActiveFeed) {
           await updateEvent(event.id, {
-            feed_side: feedSide,
-            feed_start_time: toISOFromLocalInput(startLocal),
+            ...feedUpdate,
             feed_end_time: null,
           });
         } else {
@@ -150,7 +163,12 @@ export default function EditEventModal({
                     <button
                       key={s}
                       type="button"
-                      onClick={() => setFeedSide(s)}
+                      onClick={() => {
+                        setFeedSide(s);
+                        if (s !== "bottle") {
+                          setBottleType(null);
+                        }
+                      }}
                       className={`flex-1 rounded-xl px-4 py-3 text-sm font-semibold ${
                         feedSide === s
                           ? s === "bottle"
@@ -166,6 +184,29 @@ export default function EditEventModal({
                   ))}
                 </div>
               </div>
+              {feedSide === "bottle" && (
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">
+                    Bottle contents
+                  </label>
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    {BOTTLE_TYPES.map((type) => (
+                      <button
+                        key={type}
+                        type="button"
+                        onClick={() => setBottleType(type)}
+                        className={`flex-1 rounded-xl px-4 py-3 text-sm font-semibold ${
+                          bottleType === type
+                            ? "bg-sky-500 text-white"
+                            : "bg-sky-50 text-sky-900"
+                        }`}
+                      >
+                        {getBottleTypeButtonLabel(type)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
               <div>
                 <label
                   htmlFor="edit-start"

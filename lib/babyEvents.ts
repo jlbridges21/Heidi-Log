@@ -10,6 +10,17 @@ import {
 } from "@/lib/dateUtils";
 import { getSupabaseClient } from "@/lib/supabaseClient";
 
+function feedMethodFields(input: {
+  feed_side: CreateFeedEventInput["feed_side"];
+  bottle_type?: CreateFeedEventInput["bottle_type"];
+}) {
+  return {
+    feed_side: input.feed_side,
+    bottle_type:
+      input.feed_side === "bottle" ? (input.bottle_type ?? null) : null,
+  };
+}
+
 export async function fetchAllEvents(): Promise<BabyEvent[]> {
   const supabase = getSupabaseClient();
 
@@ -88,6 +99,7 @@ export async function createDiaperEvent(
 export async function startFeed(input: {
   feed_side: CreateFeedEventInput["feed_side"];
   feed_start_time: string;
+  bottle_type?: CreateFeedEventInput["bottle_type"];
 }): Promise<BabyEvent> {
   const active = await fetchActiveFeed();
 
@@ -102,7 +114,7 @@ export async function startFeed(input: {
     .insert({
       event_type: "feed",
       occurred_at: input.feed_start_time,
-      feed_side: input.feed_side,
+      ...feedMethodFields(input),
       feed_start_time: input.feed_start_time,
       feed_end_time: null,
       feed_paused_at: null,
@@ -275,7 +287,7 @@ export async function createCompletedFeed(
     .insert({
       event_type: "feed",
       occurred_at: input.feed_start_time,
-      feed_side: input.feed_side,
+      ...feedMethodFields(input),
       feed_start_time: input.feed_start_time,
       feed_end_time: input.feed_end_time,
       duration_minutes: duration,
@@ -322,6 +334,14 @@ export async function updateEvent(
       input.feed_end_time !== undefined
         ? input.feed_end_time
         : event.feed_end_time;
+
+    const feedSide = input.feed_side ?? event.feed_side;
+
+    if (feedSide !== "bottle") {
+      updates.bottle_type = null;
+    } else if (input.bottle_type !== undefined) {
+      updates.bottle_type = input.bottle_type;
+    }
 
     if (start) {
       updates.occurred_at = start;

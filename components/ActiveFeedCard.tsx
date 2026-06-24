@@ -98,7 +98,10 @@ export default function ActiveFeedCard({
       <div className="mb-4 flex items-baseline justify-between gap-4">
         <div>
           <p className="text-lg font-semibold text-rose-900">
-            {getActiveFeedMethodLabel(activeFeed.feed_side)}
+            {getActiveFeedMethodLabel(
+              activeFeed.feed_side,
+              activeFeed.bottle_type
+            )}
           </p>
           <p className="text-sm text-rose-700">
             {isPaused
