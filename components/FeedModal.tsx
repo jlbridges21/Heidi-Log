@@ -2,8 +2,11 @@
 
 import { useState } from "react";
 import type { FeedSide } from "@/types/babyEvent";
+import { FEED_SIDES } from "@/types/babyEvent";
 import { createCompletedFeed, startFeed } from "@/lib/babyEvents";
 import {
+  getFeedMethodSelectedLabel,
+  getFeedSideButtonLabel,
   nowISO,
   toISOFromLocalInput,
   toLocalInputValue,
@@ -129,27 +132,27 @@ export default function FeedModal({
 
         {step === "side" && (
           <div className="flex flex-col gap-3">
-            <button
-              type="button"
-              onClick={() => handleSelectSide("left")}
-              className="rounded-xl bg-rose-100 px-4 py-4 text-base font-semibold text-rose-900 active:bg-rose-200"
-            >
-              Left Boob
-            </button>
-            <button
-              type="button"
-              onClick={() => handleSelectSide("right")}
-              className="rounded-xl bg-rose-100 px-4 py-4 text-base font-semibold text-rose-900 active:bg-rose-200"
-            >
-              Right Boob
-            </button>
+            {FEED_SIDES.map((feedSide) => (
+              <button
+                key={feedSide}
+                type="button"
+                onClick={() => handleSelectSide(feedSide)}
+                className={`rounded-xl px-4 py-4 text-base font-semibold active:opacity-80 ${
+                  feedSide === "bottle"
+                    ? "bg-sky-100 text-sky-900"
+                    : "bg-rose-100 text-rose-900"
+                }`}
+              >
+                {getFeedSideButtonLabel(feedSide)}
+              </button>
+            ))}
           </div>
         )}
 
         {step === "timing" && (
           <div className="flex flex-col gap-3">
             <p className="text-sm text-slate-600">
-              {side === "left" ? "Left" : "Right"} side selected
+              {getFeedMethodSelectedLabel(side)}
             </p>
             <button
               type="button"
@@ -172,7 +175,7 @@ export default function FeedModal({
               onClick={() => setStep("side")}
               className="text-sm font-medium text-slate-500"
             >
-              ← Change side
+              ← Change method
             </button>
           </div>
         )}
@@ -180,7 +183,7 @@ export default function FeedModal({
         {step === "manual" && (
           <form onSubmit={handleManualSubmit} className="flex flex-col gap-4">
             <p className="text-sm text-slate-600">
-              {side === "left" ? "Left" : "Right"} side
+              {getFeedMethodSelectedLabel(side).replace(" selected", "")}
             </p>
             <div>
               <label

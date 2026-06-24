@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { BabyEvent } from "@/types/babyEvent";
-import { formatFeedElapsed, getFeedSideLabel } from "@/lib/dateUtils";
+import { formatFeedElapsed, getActiveFeedMethodLabel } from "@/lib/dateUtils";
 import { endFeed, pauseFeed, resumeFeed } from "@/lib/babyEvents";
 
 interface ActiveFeedCardProps {
@@ -98,7 +98,7 @@ export default function ActiveFeedCard({
       <div className="mb-4 flex items-baseline justify-between gap-4">
         <div>
           <p className="text-lg font-semibold text-rose-900">
-            {getFeedSideLabel(activeFeed.feed_side)} side
+            {getActiveFeedMethodLabel(activeFeed.feed_side)}
           </p>
           <p className="text-sm text-rose-700">
             {isPaused

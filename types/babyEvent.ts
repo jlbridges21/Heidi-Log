@@ -1,5 +1,7 @@
 export type EventType = "wet_diaper" | "dirty_diaper" | "feed";
-export type FeedSide = "left" | "right";
+export type FeedSide = "left" | "right" | "bottle";
+
+export const FEED_SIDES: FeedSide[] = ["left", "right", "bottle"];
 
 export interface BabyEvent {
   id: string;

@@ -40,7 +40,9 @@ npm install
 4. Click **Run**
 5. Confirm success — you should see the `baby_events` table under **Table Editor**
 
-If you already ran an earlier version of the schema, also run `supabase/migrations/001_add_feed_pause.sql` to add pause support.
+If you already ran an earlier version of the schema, also run:
+- `supabase/migrations/001_add_feed_pause.sql` — pause support
+- `supabase/migrations/002_add_bottle_feed.sql` — bottle feeding option
 
 ## Add Environment Variables
 
@@ -121,7 +123,7 @@ supabase/
 | baby_id           | uuid        | Nullable — ready for multiple babies       |
 | event_type        | text        | `wet_diaper`, `dirty_diaper`, `feed`       |
 | occurred_at       | timestamptz | Diaper time, or feed start for feeds       |
-| feed_side         | text        | `left` or `right` (feeds only)             |
+| feed_side         | text        | `left`, `right`, or `bottle` (feeds only)  |
 | feed_start_time   | timestamptz | Feed start                                 |
 | feed_end_time     | timestamptz | Feed end (null while active)               |
 | feed_paused_at    | timestamptz | When currently paused (null while running)   |

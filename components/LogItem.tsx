@@ -50,7 +50,7 @@ export default function LogItem({ event, onEdit, onDelete }: LogItemProps) {
       {event.event_type === "feed" && (
         <div className="mb-4 space-y-1 text-sm text-slate-600">
           <p>
-            <span className="font-medium text-slate-700">Side:</span>{" "}
+            <span className="font-medium text-slate-700">Method:</span>{" "}
             {getFeedSideLabel(event.feed_side)}
           </p>
           {event.feed_start_time && (

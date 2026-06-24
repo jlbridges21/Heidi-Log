@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from "react";
 import type { BabyEvent, FeedSide } from "@/types/babyEvent";
+import { FEED_SIDES } from "@/types/babyEvent";
 import { updateEvent } from "@/lib/babyEvents";
 import {
+  getFeedSideButtonLabel,
   toISOFromLocalInput,
   toLocalInputValue,
   validateFeedTimes,
@@ -141,21 +143,25 @@ export default function EditEventModal({
               )}
               <div>
                 <label className="mb-2 block text-sm font-medium text-slate-700">
-                  Side
+                  Method
                 </label>
-                <div className="flex gap-2">
-                  {(["left", "right"] as FeedSide[]).map((s) => (
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  {FEED_SIDES.map((s) => (
                     <button
                       key={s}
                       type="button"
                       onClick={() => setFeedSide(s)}
-                      className={`flex-1 rounded-xl px-4 py-3 font-semibold capitalize ${
+                      className={`flex-1 rounded-xl px-4 py-3 text-sm font-semibold ${
                         feedSide === s
-                          ? "bg-rose-500 text-white"
-                          : "bg-rose-50 text-rose-900"
+                          ? s === "bottle"
+                            ? "bg-sky-500 text-white"
+                            : "bg-rose-500 text-white"
+                          : s === "bottle"
+                            ? "bg-sky-50 text-sky-900"
+                            : "bg-rose-50 text-rose-900"
                       }`}
                     >
-                      {s}
+                      {getFeedSideButtonLabel(s)}
                     </button>
                   ))}
                 </div>

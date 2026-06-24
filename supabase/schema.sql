@@ -11,7 +11,7 @@ create table if not exists public.baby_events (
   baby_id uuid null,
   event_type text not null check (event_type in ('wet_diaper', 'dirty_diaper', 'feed')),
   occurred_at timestamptz not null,
-  feed_side text null check (feed_side is null or feed_side in ('left', 'right')),
+  feed_side text null check (feed_side is null or feed_side in ('left', 'right', 'bottle')),
   feed_start_time timestamptz null,
   feed_end_time timestamptz null,
   feed_paused_at timestamptz null,

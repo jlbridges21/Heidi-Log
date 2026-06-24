@@ -189,8 +189,62 @@ export function getFeedSideLabel(side: string | null): string {
       return "Left";
     case "right":
       return "Right";
+    case "bottle":
+      return "Bottle";
     default:
       return "—";
+  }
+}
+
+export function getFeedSideButtonLabel(side: string): string {
+  switch (side) {
+    case "left":
+      return "Left Boob";
+    case "right":
+      return "Right Boob";
+    case "bottle":
+      return "Bottle";
+    default:
+      return side;
+  }
+}
+
+export function getFeedMethodSelectedLabel(side: string | null): string {
+  switch (side) {
+    case "left":
+      return "Left side selected";
+    case "right":
+      return "Right side selected";
+    case "bottle":
+      return "Bottle selected";
+    default:
+      return "Feed method selected";
+  }
+}
+
+export function getActiveFeedMethodLabel(side: string | null): string {
+  switch (side) {
+    case "left":
+      return "Left side";
+    case "right":
+      return "Right side";
+    case "bottle":
+      return "Bottle";
+    default:
+      return "—";
+  }
+}
+
+function getLastFeedMethodPhrase(side: string | null): string {
+  switch (side) {
+    case "left":
+      return "on the Left boob";
+    case "right":
+      return "on the Right boob";
+    case "bottle":
+      return "with a bottle";
+    default:
+      return "";
   }
 }
 
@@ -255,14 +309,20 @@ export function formatLastFedSummary(
 
   const agoPart = formatTimeAgo(diffMs);
   const durationMinutes = getLastFeedDurationMinutes(feed);
-  const side = getFeedSideLabel(feed.feed_side);
+  const methodPhrase = getLastFeedMethodPhrase(feed.feed_side);
+
+  if (!methodPhrase) {
+    return durationMinutes === null
+      ? `Last fed ${agoPart}`
+      : `Last fed ${agoPart} for ${formatFeedDurationSummary(durationMinutes)}`;
+  }
 
   if (durationMinutes === null) {
-    return `Last fed ${agoPart} on the ${side} boob`;
+    return `Last fed ${agoPart} ${methodPhrase}`;
   }
 
   const durationPart = formatFeedDurationSummary(durationMinutes);
-  return `Last fed ${agoPart} for ${durationPart} on the ${side} boob`;
+  return `Last fed ${agoPart} for ${durationPart} ${methodPhrase}`;
 }
 
 export function validateManualDateTime(localDateTime: string): string | null {
