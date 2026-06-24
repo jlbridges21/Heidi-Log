@@ -4,13 +4,16 @@ import { useState } from "react";
 import type { BottleType, FeedSide } from "@/types/babyEvent";
 import { BOTTLE_TYPES, FEED_SIDES } from "@/types/babyEvent";
 import { createCompletedFeed, startFeed } from "@/lib/babyEvents";
+import BottleOuncesInput from "@/components/BottleOuncesInput";
 import {
   getBottleTypeButtonLabel,
   getFeedMethodSelectedLabel,
   getFeedSideButtonLabel,
   nowISO,
+  parseBottleOunces,
   toISOFromLocalInput,
   toLocalInputValue,
+  validateBottleOunces,
   validateFeedTimes,
 } from "@/lib/dateUtils";
 
@@ -34,6 +37,7 @@ export default function FeedModal({
   const [step, setStep] = useState<Step>("side");
   const [side, setSide] = useState<FeedSide | null>(null);
   const [bottleType, setBottleType] = useState<BottleType | null>(null);
+  const [bottleOunces, setBottleOunces] = useState("");
   const [startLocal, setStartLocal] = useState(toLocalInputValue(nowISO()));
   const [endLocal, setEndLocal] = useState(toLocalInputValue(nowISO()));
   const [loading, setLoading] = useState(false);
@@ -47,6 +51,7 @@ export default function FeedModal({
     setStep("side");
     setSide(null);
     setBottleType(null);
+    setBottleOunces("");
     setStartLocal(toLocalInputValue(nowISO()));
     setEndLocal(toLocalInputValue(nowISO()));
     setValidationError(null);
@@ -116,6 +121,14 @@ export default function FeedModal({
       return;
     }
 
+    if (payload.feed_side === "bottle") {
+      const ouncesError = validateBottleOunces(bottleOunces);
+      if (ouncesError) {
+        setValidationError(ouncesError);
+        return;
+      }
+    }
+
     const error = validateFeedTimes(startLocal, endLocal);
     if (error) {
       setValidationError(error);
@@ -130,6 +143,10 @@ export default function FeedModal({
         ...payload,
         feed_start_time: toISOFromLocalInput(startLocal),
         feed_end_time: toISOFromLocalInput(endLocal),
+        bottle_ounces:
+          payload.feed_side === "bottle"
+            ? parseBottleOunces(bottleOunces)
+            : null,
       });
       reset();
       onSaved();
@@ -278,6 +295,16 @@ export default function FeedModal({
                 className="w-full rounded-xl border border-slate-300 px-4 py-3 text-base"
               />
             </div>
+            {side === "bottle" && (
+              <BottleOuncesInput
+                id="manual-bottle-ounces"
+                value={bottleOunces}
+                onChange={(value) => {
+                  setBottleOunces(value);
+                  setValidationError(null);
+                }}
+              />
+            )}
             {validationError && (
               <p className="text-sm text-red-600">{validationError}</p>
             )}

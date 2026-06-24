@@ -13,6 +13,7 @@ create table if not exists public.baby_events (
   occurred_at timestamptz not null,
   feed_side text null check (feed_side is null or feed_side in ('left', 'right', 'bottle')),
   bottle_type text null check (bottle_type is null or bottle_type in ('breast_milk', 'formula')),
+  bottle_ounces numeric(5, 2) null,
   feed_start_time timestamptz null,
   feed_end_time timestamptz null,
   feed_paused_at timestamptz null,

@@ -13,6 +13,7 @@ export interface BabyEvent {
   occurred_at: string;
   feed_side: FeedSide | null;
   bottle_type: BottleType | null;
+  bottle_ounces: number | null;
   feed_start_time: string | null;
   feed_end_time: string | null;
   feed_paused_at: string | null;
@@ -33,12 +34,14 @@ export interface CreateFeedEventInput {
   feed_start_time: string;
   feed_end_time?: string | null;
   bottle_type?: BottleType | null;
+  bottle_ounces?: number | null;
 }
 
 export interface UpdateBabyEventInput {
   occurred_at?: string;
   feed_side?: FeedSide;
   bottle_type?: BottleType | null;
+  bottle_ounces?: number | null;
   feed_start_time?: string;
   feed_end_time?: string | null;
   duration_minutes?: number | null;

@@ -3,6 +3,7 @@
 import type { BabyEvent } from "@/types/babyEvent";
 import {
   formatDateTime,
+  formatBottleOunces,
   formatDuration,
   formatTime,
   getBottleTypeLabel,
@@ -58,6 +59,12 @@ export default function LogItem({ event, onEdit, onDelete }: LogItemProps) {
             <p>
               <span className="font-medium text-slate-700">Contents:</span>{" "}
               {getBottleTypeLabel(event.bottle_type)}
+            </p>
+          )}
+          {event.feed_side === "bottle" && event.bottle_ounces != null && (
+            <p>
+              <span className="font-medium text-slate-700">Amount:</span>{" "}
+              {formatBottleOunces(Number(event.bottle_ounces))}
             </p>
           )}
           {event.feed_start_time && (

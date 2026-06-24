@@ -343,6 +343,27 @@ export function formatLastFedSummary(
     feed.feed_side,
     feed.bottle_type
   );
+  const ouncesPart =
+    feed.feed_side === "bottle" && feed.bottle_ounces != null
+      ? formatBottleOunces(Number(feed.bottle_ounces))
+      : null;
+
+  if (feed.feed_side === "bottle" && ouncesPart) {
+    const durationPart =
+      durationMinutes !== null
+        ? formatFeedDurationSummary(durationMinutes)
+        : null;
+
+    if (durationPart && methodPhrase) {
+      return `Last fed ${ouncesPart} ${agoPart} for ${durationPart} ${methodPhrase}`;
+    }
+
+    if (methodPhrase) {
+      return `Last fed ${ouncesPart} ${agoPart} ${methodPhrase}`;
+    }
+
+    return `Last fed ${ouncesPart} ${agoPart}`;
+  }
 
   if (!methodPhrase) {
     return durationMinutes === null
@@ -393,4 +414,34 @@ export function validateFeedTimes(
   }
 
   return null;
+}
+
+export function formatBottleOunces(ounces: number): string {
+  const rounded = Math.round(ounces * 10) / 10;
+  const display = Number.isInteger(rounded)
+    ? String(rounded)
+    : rounded.toFixed(1).replace(/\.0$/, "");
+
+  return rounded === 1 ? `${display} ounce` : `${display} ounces`;
+}
+
+export function validateBottleOunces(value: string): string | null {
+  if (!value.trim()) {
+    return "Please enter the number of ounces";
+  }
+
+  const ounces = Number(value);
+  if (Number.isNaN(ounces) || ounces <= 0) {
+    return "Enter a valid amount greater than 0";
+  }
+
+  if (ounces > 50) {
+    return "That amount seems too large";
+  }
+
+  return null;
+}
+
+export function parseBottleOunces(value: string): number {
+  return Math.round(Number(value) * 100) / 100;
 }

@@ -7,11 +7,14 @@ import { updateEvent } from "@/lib/babyEvents";
 import {
   getBottleTypeButtonLabel,
   getFeedSideButtonLabel,
+  parseBottleOunces,
   toISOFromLocalInput,
   toLocalInputValue,
+  validateBottleOunces,
   validateFeedTimes,
   validateManualDateTime,
 } from "@/lib/dateUtils";
+import BottleOuncesInput from "@/components/BottleOuncesInput";
 
 interface EditEventModalProps {
   event: BabyEvent | null;
@@ -31,10 +34,12 @@ export default function EditEventModal({
   const [occurredLocal, setOccurredLocal] = useState("");
   const [feedSide, setFeedSide] = useState<FeedSide>("left");
   const [bottleType, setBottleType] = useState<BottleType | null>(null);
+  const [bottleOunces, setBottleOunces] = useState("");
   const [startLocal, setStartLocal] = useState("");
   const [endLocal, setEndLocal] = useState("");
   const [loading, setLoading] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [ouncesError, setOuncesError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!event) return;
@@ -42,6 +47,9 @@ export default function EditEventModal({
     setOccurredLocal(toLocalInputValue(event.occurred_at));
     setFeedSide(event.feed_side ?? "left");
     setBottleType(event.bottle_type);
+    setBottleOunces(
+      event.bottle_ounces != null ? String(event.bottle_ounces) : ""
+    );
     setStartLocal(
       toLocalInputValue(event.feed_start_time ?? event.occurred_at)
     );
@@ -49,6 +57,7 @@ export default function EditEventModal({
       event.feed_end_time ? toLocalInputValue(event.feed_end_time) : ""
     );
     setValidationError(null);
+    setOuncesError(null);
   }, [event]);
 
   if (!isOpen || !event) {
@@ -75,9 +84,22 @@ export default function EditEventModal({
           return;
         }
 
+        if (feedSide === "bottle" && event.feed_end_time) {
+          const error = validateBottleOunces(bottleOunces);
+          if (error) {
+            setOuncesError(error);
+            setLoading(false);
+            return;
+          }
+        }
+
         const feedUpdate = {
           feed_side: feedSide,
           bottle_type: feedSide === "bottle" ? bottleType : null,
+          bottle_ounces:
+            feedSide === "bottle" && event.feed_end_time
+              ? parseBottleOunces(bottleOunces)
+              : null,
           feed_start_time: toISOFromLocalInput(startLocal),
         };
 
@@ -167,6 +189,7 @@ export default function EditEventModal({
                         setFeedSide(s);
                         if (s !== "bottle") {
                           setBottleType(null);
+                          setBottleOunces("");
                         }
                       }}
                       className={`flex-1 rounded-xl px-4 py-3 text-sm font-semibold ${
@@ -206,6 +229,18 @@ export default function EditEventModal({
                     ))}
                   </div>
                 </div>
+              )}
+              {feedSide === "bottle" && event.feed_end_time && (
+                <BottleOuncesInput
+                  id="edit-bottle-ounces"
+                  value={bottleOunces}
+                  onChange={(value) => {
+                    setBottleOunces(value);
+                    setOuncesError(null);
+                    setValidationError(null);
+                  }}
+                  error={ouncesError}
+                />
               )}
               <div>
                 <label

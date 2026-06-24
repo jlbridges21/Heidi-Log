@@ -134,7 +134,8 @@ export async function startFeed(input: {
 
 export async function endFeed(
   feedId: string,
-  endTime: string
+  endTime: string,
+  options?: { bottle_ounces?: number }
 ): Promise<BabyEvent> {
   const supabase = getSupabaseClient();
 
@@ -152,6 +153,12 @@ export async function endFeed(
 
   if (!feed.feed_start_time) {
     throw new Error("Feed is missing a start time");
+  }
+
+  if (feed.feed_side === "bottle") {
+    if (options?.bottle_ounces == null || options.bottle_ounces <= 0) {
+      throw new Error("Please enter the number of ounces");
+    }
   }
 
   let pausedSeconds = feed.feed_paused_seconds ?? 0;
@@ -175,6 +182,8 @@ export async function endFeed(
       feed_paused_at: null,
       feed_paused_seconds: pausedSeconds,
       duration_minutes: duration,
+      bottle_ounces:
+        feed.feed_side === "bottle" ? options?.bottle_ounces ?? null : null,
       updated_at: new Date().toISOString(),
     })
     .eq("id", feedId)
@@ -275,6 +284,12 @@ export async function createCompletedFeed(
     throw new Error("A feeding session is already in progress");
   }
 
+  if (input.feed_side === "bottle") {
+    if (input.bottle_ounces == null || input.bottle_ounces <= 0) {
+      throw new Error("Please enter the number of ounces");
+    }
+  }
+
   const duration = calculateDurationMinutes(
     input.feed_start_time,
     input.feed_end_time
@@ -290,6 +305,8 @@ export async function createCompletedFeed(
       ...feedMethodFields(input),
       feed_start_time: input.feed_start_time,
       feed_end_time: input.feed_end_time,
+      bottle_ounces:
+        input.feed_side === "bottle" ? (input.bottle_ounces ?? null) : null,
       duration_minutes: duration,
       updated_at: new Date().toISOString(),
     })
@@ -339,8 +356,14 @@ export async function updateEvent(
 
     if (feedSide !== "bottle") {
       updates.bottle_type = null;
-    } else if (input.bottle_type !== undefined) {
-      updates.bottle_type = input.bottle_type;
+      updates.bottle_ounces = null;
+    } else {
+      if (input.bottle_type !== undefined) {
+        updates.bottle_type = input.bottle_type;
+      }
+      if (input.bottle_ounces !== undefined) {
+        updates.bottle_ounces = input.bottle_ounces;
+      }
     }
 
     if (start) {
