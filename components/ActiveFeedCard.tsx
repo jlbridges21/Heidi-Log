@@ -67,6 +67,8 @@ export default function ActiveFeedCard({
 
   const handleEndFeeding = async () => {
     if (isBottleFeed) {
+      setOuncesInput("1");
+      setOuncesError(null);
       setShowOuncesPrompt(true);
       return;
     }
@@ -148,7 +150,6 @@ export default function ActiveFeedCard({
             setOuncesError(null);
           }}
           error={ouncesError}
-          autoFocus
         />
         <div className="mt-4 flex flex-col gap-3">
           <button
@@ -210,7 +211,7 @@ export default function ActiveFeedCard({
             {isBottleFeed
               ? "Enter ounces when baby is done"
               : isPaused
-                ? "Tap Resume when ready to continue"
+                ? "Feeding paused — end saves time at pause"
                 : "Tap Pause for a burp break"}
           </p>
         </div>

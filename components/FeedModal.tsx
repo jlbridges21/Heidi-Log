@@ -37,7 +37,7 @@ export default function FeedModal({
   const [step, setStep] = useState<Step>("side");
   const [side, setSide] = useState<FeedSide | null>(null);
   const [bottleType, setBottleType] = useState<BottleType | null>(null);
-  const [bottleOunces, setBottleOunces] = useState("");
+  const [bottleOunces, setBottleOunces] = useState("1");
   const [startLocal, setStartLocal] = useState(toLocalInputValue(nowISO()));
   const [endLocal, setEndLocal] = useState(toLocalInputValue(nowISO()));
   const [loading, setLoading] = useState(false);
@@ -51,7 +51,7 @@ export default function FeedModal({
     setStep("side");
     setSide(null);
     setBottleType(null);
-    setBottleOunces("");
+    setBottleOunces("1");
     setStartLocal(toLocalInputValue(nowISO()));
     setEndLocal(toLocalInputValue(nowISO()));
     setValidationError(null);

@@ -427,12 +427,16 @@ export function formatBottleOunces(ounces: number): string {
 
 export function validateBottleOunces(value: string): string | null {
   if (!value.trim()) {
-    return "Please enter the number of ounces";
+    return "Please select the number of ounces";
   }
 
   const ounces = Number(value);
-  if (Number.isNaN(ounces) || ounces <= 0) {
-    return "Enter a valid amount greater than 0";
+  if (Number.isNaN(ounces)) {
+    return "Please select a valid amount";
+  }
+
+  if (ounces <= 0) {
+    return "Amount must be greater than 0 oz";
   }
 
   if (ounces > 50) {
@@ -444,4 +448,30 @@ export function validateBottleOunces(value: string): string | null {
 
 export function parseBottleOunces(value: string): number {
   return Math.round(Number(value) * 100) / 100;
+}
+
+/**
+ * When a feed is ended while paused, the effective end time is the pause
+ * timestamp so post-pause waiting time is not counted as feeding time.
+ */
+export function resolveFeedEndTime(
+  feed: {
+    feed_paused_at: string | null;
+    feed_paused_seconds: number;
+  },
+  requestedEndTime: string
+): { endTime: string; pausedSeconds: number } {
+  const pausedSeconds = feed.feed_paused_seconds ?? 0;
+
+  if (feed.feed_paused_at) {
+    return {
+      endTime: feed.feed_paused_at,
+      pausedSeconds,
+    };
+  }
+
+  return {
+    endTime: requestedEndTime,
+    pausedSeconds,
+  };
 }

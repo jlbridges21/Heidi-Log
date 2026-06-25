@@ -7,6 +7,7 @@ import type {
 import {
   calculateDurationMinutes,
   calculateFeedDurationMinutes,
+  resolveFeedEndTime,
 } from "@/lib/dateUtils";
 import { getSupabaseClient } from "@/lib/supabaseClient";
 
@@ -161,24 +162,21 @@ export async function endFeed(
     }
   }
 
-  let pausedSeconds = feed.feed_paused_seconds ?? 0;
-  if (feed.feed_paused_at) {
-    pausedSeconds += Math.floor(
-      (new Date(endTime).getTime() - new Date(feed.feed_paused_at).getTime()) /
-        1000
-    );
-  }
+  const { endTime: effectiveEndTime, pausedSeconds } = resolveFeedEndTime(
+    feed,
+    endTime
+  );
 
   const duration = calculateFeedDurationMinutes(
     feed.feed_start_time,
-    endTime,
+    effectiveEndTime,
     pausedSeconds
   );
 
   const { data, error } = await supabase
     .from("baby_events")
     .update({
-      feed_end_time: endTime,
+      feed_end_time: effectiveEndTime,
       feed_paused_at: null,
       feed_paused_seconds: pausedSeconds,
       duration_minutes: duration,
