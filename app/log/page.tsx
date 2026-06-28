@@ -1,12 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import EditEventModal from "@/components/EditEventModal";
 import LogItem from "@/components/LogItem";
 import SetupBanner from "@/components/SetupBanner";
 import Toast from "@/components/Toast";
 import { deleteEvent, fetchAllEvents } from "@/lib/babyEvents";
+import { buildFeedGapMap } from "@/lib/feedGaps";
 import { isSupabaseConfigured } from "@/lib/supabaseClient";
 import type { BabyEvent } from "@/types/babyEvent";
 
@@ -50,6 +51,8 @@ export default function LogPage() {
   useEffect(() => {
     loadEvents();
   }, [loadEvents]);
+
+  const feedGapMap = useMemo(() => buildFeedGapMap(events), [events]);
 
   const handleDelete = async (event: BabyEvent) => {
     const label =
@@ -125,15 +128,28 @@ export default function LogPage() {
           </Link>
         </div>
       ) : (
-        <div className="flex flex-col gap-3">
-          {events.map((event) => (
-            <LogItem
-              key={event.id}
-              event={event}
-              onEdit={setEditingEvent}
-              onDelete={handleDelete}
-            />
-          ))}
+        <div className="flex flex-col">
+          {events.map((event) => {
+            const gapLabel =
+              event.event_type === "feed"
+                ? feedGapMap.get(event.id)
+                : undefined;
+
+            return (
+              <div key={event.id} className="mb-3">
+                <LogItem
+                  event={event}
+                  onEdit={setEditingEvent}
+                  onDelete={handleDelete}
+                />
+                {gapLabel && (
+                  <p className="mt-2 mb-3 text-center text-lg font-semibold text-[#222021]">
+                    {gapLabel}
+                  </p>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
 
